@@ -11,11 +11,18 @@ uniform vec3 viewPos;
 uniform vec3 lightColor;
 uniform vec3 objectColor;
 
+uniform float ambientStrength;
+uniform float specularStrength;
+
+
+/* 
+  Chat gpt generated junk shader.
+*/
+
 const bool enableLighting = true;
 
 vec3 calculateLighting(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 viewPos, vec3 lightColor, vec3 objectColor) {
   // Ambient
-  float ambientStrength = 0.1;
   vec3 ambient = ambientStrength * lightColor;
   
   // Diffuse 
@@ -24,13 +31,14 @@ vec3 calculateLighting(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 viewPos, v
   float diff = max(dot(norm, lightDir), 0.0);
   vec3 diffuse = diff * lightColor;
   
-  // Specular
-  float specularStrength = 0.5;
+  
+  float shininess = 32.0;
   vec3 viewDir = normalize(viewPos - fragPos);
   vec3 reflectDir = reflect(-lightDir, norm);
-  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+  float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
   vec3 specular = specularStrength * spec * lightColor;
-  
+
+
   return (ambient + diffuse + specular) * objectColor;
 }
 
@@ -42,5 +50,4 @@ void main() {
     result = objectColor;
   }
   FragColor = vec4(result, 1.0);
-  // FragColor = vec4(objectColor, 1.0);
 }

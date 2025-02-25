@@ -187,9 +187,9 @@ main :: fn () {
   vertex, err := File::read_all("shader/vert.glsl");
   fragment, err1 := File::read_all("shader/frag.glsl");
   
-  window := Window::create(800, 600, "Hello, World!");
+  window := Window::create(800, 600, "Привет, Мир!");
   glEnable(GL::DEPTH_TEST);
-  glClearColor(1.0, 1.0, 1.0, 1.0);
+  glClearColor(0.005, 0.005, 0.005, 1.0);
 
   buffer := GeneralBuffer![Vertex]::new();
 
@@ -201,16 +201,9 @@ main :: fn () {
   vertices := cube(0.45);
   defer vertices.deinit();
 
-  { // Lighting uniforms
-    lightPos := Vec3::new(1.2, 1.0, 2.0);
-    viewPos := Vec3::new(0.0, 0.0, 3.0);
-    lightColor := Vec3::new(1.0, 1.0, 1.0);
-    objectColor := Vec3::new(1.0, 0.25, 0.31);
-    shader.set_vec3("lightPos", &lightPos);
-    shader.set_vec3("viewPos", &viewPos);
-    shader.set_vec3("lightColor", &lightColor);
-    shader.set_vec3("objectColor", &objectColor);
-  }
+  здравствуйте := 0;
+
+  printf("%d\n"c, здравствуйте);
 
   printf("%s\n"c, buffer.descriptor.data);
 
@@ -226,21 +219,35 @@ main :: fn () {
   model_position := Vec3::new(0.0, 0.0, -5.0);
   model_rotation := Vec3::new(0.0, 5.0, 0.0);
 
+  lightColor := Vec3::new(0.0, 1.0, 1.0);
+  objectColor := Vec3::new(1.0, 0.25, 0.31);
+
   while !window.should_close() {
     buffer.bind_and_buffer_data({
       data: vertices.data,
       length: NUM_VERTICES
     });
 
-    model := Mat4::translation(model_position) * Mat4::rotation(model_rotation);
-    camera.target = model_position;
-    camera.update();
+    { // Lighting uniforms
+      lightPos := model_position + Vec3::new(0.0, 1.0, 1.0);
 
-    viewPos := camera.view.get_translation();
-    shader.set_vec3("viewPos", &viewPos);
-    shader.set_mat4("model", &model);
-    shader.set_mat4("view", &camera.view);
-    shader.set_mat4("projection", &camera.projection);
+      shader.set_vec3("lightPos", &lightPos);
+      shader.set_vec3("lightColor", &lightColor);
+      shader.set_vec3("objectColor", &objectColor);
+      shader.set_float("specularStrength", 1.5);
+      shader.set_float("ambientStrength", 1.0);
+    }
+
+    {
+      model := Mat4::translation(model_position) * Mat4::rotation(model_rotation);
+      camera.target = model_position;
+      camera.update();
+      viewPos := camera.view.get_translation();
+      shader.set_vec3("viewPos", &viewPos);
+      shader.set_mat4("model", &model);
+      shader.set_mat4("view", &camera.view);
+      shader.set_mat4("projection", &camera.projection);
+    }
 
     glClear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
     glDrawArrays(GL::TRIANGLES, 0, NUM_VERTICES);
