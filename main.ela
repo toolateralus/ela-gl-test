@@ -1,6 +1,7 @@
 #import gl;
 #import file;
 #import format;
+#import time;
 
 Vertex :: struct {
   position: Vec3,
@@ -192,69 +193,186 @@ print_vertices :: fn(vertices: Slice![Vertex]) {
   printf("]\n"c);
 }
 
+Cube :: struct {
+  scale:    Vec3,
+  position: Vec3,
+  rotation: Vec3,
+  vertices: Vertex[]*,
+}
+
+impl Cube {
+  new :: fn(scale: f32) -> #self {
+    #static vertices : Vertex[]; 
+    if vertices.length == 0 {
+      vertices = cube(1.0);
+    }
+
+    return .{
+      vertices: &vertices,
+      scale: Vec3::new(scale, scale, scale),
+      position: .{},
+      rotation: .{}
+    }
+  }
+
+  default :: fn() -> Cube {
+    return Cube::new(1.0);  
+  }
+
+  set_position :: fn(self*, position: Vec3) {
+    self.position = position;
+  }
+
+  set_rotation :: fn(self*, rotation: Vec3) {
+    self.rotation = rotation;
+  }
+
+  set_scale :: fn(self*, scale: Vec3) {
+    self.scale = scale;
+  }
+
+  vertex_slice :: fn(self) -> Slice![Vertex] {
+    return self.vertices.as_slice(0..self.vertices.length);
+  }
+
+  matrix :: фн(себя) -> Mat4 {
+    возврат Mat4::translation(себя.position) * 
+      Mat4::rotation(себя.rotation) * 
+      Mat4::scalar(себя.scale);
+  }
+}
+
 main :: fn () {
-  vertices := cube(1.0);
-
-  vertex, _ := File::read_all("shader/vert.glsl");
-  fragment, _1 := File::read_all("shader/frag.glsl");
-  
   window := Window::create(800, 600, "Привет, Мир!");
-
   glEnable(GL::DEPTH_TEST);
   glClearColor(0.005, 0.005, 0.005, 1.0);
   
   buffer := GeneralBuffer![Vertex]::new();
-  print_vertices(vertices.as_slice(0..NUM_VERTICES));
-
-  shader := Shader::create(vertex, fragment);
-  vertex.deinit();
-  fragment.deinit();
-  shader.use();
-  
-  defer vertices.deinit();
-
   println(buffer.descriptor);
 
-  fov := 45.0;
-  aspect_ratio := 800.0 / 600.0;
-  near := 0.1;
-  far := 100.0;
+  shader: Shader;
+  {
+    vertex := File::read_all("shader/vert.glsl").unwrap();
+    fragment := File::read_all("shader/frag.glsl").unwrap();
+    shader = Shader::create(vertex, fragment);
+    shader.use();
+    vertex.deinit();
+    fragment.deinit();
+  }
 
-  camera := Camera::new(Vec3::up(), fov, aspect_ratio, near, far);
-  camera.position = Vec3::new(0.0, 0.0, 3.0);
-  camera.target = .{};
+  key_buffer: char[];
+  {
+    glfwSetWindowUserPointer(window.handle, &key_buffer);
+    window.set_key_callback(fn(window: GLFWwindow*, key: s32, scancode: s32, action: s32, mod: s32) {
+      data : char[]* = glfwGetWindowUserPointer(window);
+      if action == GLFW::PRESS && key == GLFW::KEY_C && mod & GLFW::MOD_CONTROL {
+        glfwTerminate();
+      }
+      if action == GLFW::PRESS || action == GLFW::REPEAT {
+        if key >= GLFW::KEY_A && key <= GLFW::KEY_Z {
+          // Handle alphabetic keys
+          if mod & GLFW::MOD_SHIFT {
+            data.push(key as char); // Uppercase
+          } else {
+            data.push(key as char + 'a' - 'A'); // Lowercase
+          }
+        } else if key >= GLFW::KEY_0 && key <= GLFW::KEY_9 {
+          // Handle numeric keys
+          if mod & GLFW::MOD_SHIFT {
+            switch key {
+              GLFW::KEY_1 => data.push('!'),
+              GLFW::KEY_2 => data.push('@'), 
+              GLFW::KEY_3 => data.push('#'), 
+              GLFW::KEY_4 => data.push('$'), 
+              GLFW::KEY_5 => data.push('%'), 
+              GLFW::KEY_6 => data.push('^'), 
+              GLFW::KEY_7 => data.push('&'), 
+              GLFW::KEY_8 => data.push('*'), 
+              GLFW::KEY_9 => data.push('('), 
+              GLFW::KEY_0 => data.push(')'), 
+            } 
+          } else {
+            data.push(key as char);
+          }
+        } else {
+          switch key {
+            GLFW::KEY_BACKSPACE: {
+              if data.length > 0 {
+                data.pop();
+              }
+            }
+            GLFW::KEY_ENTER: {
+              data.push('\n');
+            }
+            GLFW::KEY_TAB: {
+              data.push('\t');
+            }
+            GLFW::KEY_SPACE: {
+              data.push(' ');
+            }
+          } 
+        }
+      }
+    });
+  }
 
-  model_position := Vec3::new(0.0, 0.0, -5.0);
-  model_rotation := Vec3::new(0.0, 5.0, 0.0);
+  camera: Camera;
+  {
+    fov := 45.0;
+    aspect_ratio := 800.0 / 600.0;
+    near := 0.1;
+    far := 100.0;
+    camera = Camera::new(Vec3::up(), fov, aspect_ratio, near, far);
+    camera.position = Vec3::new(0.0, 0.0, 3.0);
+  }
+
+  model: Cube; 
+  {
+    model = Cube::default();
+    model.set_position(Vec3::new(0.0, 0.0, -5.0));
+    model.set_rotation(Vec3::zero());
+    model.set_scale(Vec3::one());
+  }
 
   lightColor := Vec3::new(0.0, 1.0, 1.0);
   objectColor := Vec3::new(1.0, 0.25, 0.31);
 
+  model_pos := Vec3::new(0.0, 0.0, -5.0);
+
   while !window.should_close() {
-    buffer.bind_and_buffer_data(.{
-      data: vertices.data,
-      length: NUM_VERTICES
-    });
 
-    model_rotation.y = model_rotation.y + 0.1;
 
-    { // Lighting uniforms
-      lightPos := model_position + Vec3::new(0.0, 1.0, 1.0);
+    while key_buffer.length > 0 {
+      move_vector := матч key_buffer.pop() {
+        'w' => Vec3::new(0.0, 0.0, -1.0),
+        'a' => Vec3::new(1.0, 0.0, 0.0),
+        's' => Vec3::new(0.0, 0.0, 1.0),
+        'd' => Vec3::new(-1.0, 0.0, 0.0),
+        else => Vec3::zero()
+      };
+      printf("move: x=%.1f, y=%.1f, z=%.1f\n"c, move_vector.x, move_vector.y, move_vector.z);
+      camera.position = camera.position + move_vector;
+    }
 
+    // Lighting uniforms.
+    buffer.bind_and_buffer_data(model.vertex_slice());
+    {
+      lightPos :=  Vec3::new(0.0, 1.0, 1.0);
       shader.set_vec3("lightPos", &lightPos);
       shader.set_vec3("lightColor", &lightColor);
       shader.set_vec3("objectColor", &objectColor);
       shader.set_float("specularStrength", 1.5);
       shader.set_float("ambientStrength", 1.0);
     }
-
+  
+    // Camera stuff.
+    matrix := model.matrix();
     {
-      model := Mat4::translation(model_position) * Mat4::rotation(model_rotation);
-      camera.target = model_position;
+      camera.target = model.position;
       camera.update();
       viewPos := camera.view.get_translation();
       shader.set_vec3("viewPos", &viewPos);
-      shader.set_mat4("model", &model);
+      shader.set_mat4("model", &matrix);
       shader.set_mat4("view", &camera.view);
       shader.set_mat4("projection", &camera.projection);
     }
@@ -263,5 +381,6 @@ main :: fn () {
     glDrawArrays(GL::TRIANGLES, 0, NUM_VERTICES);
 
     window.present();
+
   }
 }
