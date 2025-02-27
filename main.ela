@@ -2,6 +2,7 @@
 #import file;
 #import format;
 #import time;
+#import memory;
 
 Vertex :: struct {
   position: Vec3,
@@ -38,8 +39,8 @@ impl Vec2 {
   }
 }
 
-impl List![Field] {
-  order_by :: fn(self, predicate: fn* (Field*, Field*) -> bool) -> List![Field] {
+impl Field[] {
+  order_by :: fn(self, predicate: fn* (Field*, Field*) -> bool) -> Field[] {
     new_list := self.clone();
     for i in 0..new_list.length {
       for j in (i+1)..new_list.length {
@@ -54,13 +55,13 @@ impl List![Field] {
   }
 }
 
-GeneralBuffer :: struct![T] {
+GeneralBuffer :: struct!<T> {
   vao: s32,
   vbo: s32,
   descriptor: String,
 }
 
-impl![T] GeneralBuffer![T] {
+impl!<T> GeneralBuffer!<T> {
   new :: fn() -> #self {
     buffer: #себя;
     glGenVertexArrays(1, &buffer.vao);
@@ -136,7 +137,7 @@ impl![T] GeneralBuffer![T] {
     return buffer;
   }
 
-  bind_and_buffer_data :: fn(self, slice: Slice![T]) {
+  bind_and_buffer_data :: fn(self, slice: Slice!<T>) {
     glBindVertexArray(self.vao);
     glBindBuffer(GL::ARRAY_BUFFER, self.vbo);
     glBufferData(GL::ARRAY_BUFFER, sizeof(Vertex) * slice.length, slice.data, GL::STATIC_DRAW);
@@ -196,7 +197,7 @@ cube :: fn(scale: f32) -> Vertex[] {
   ]);
 }
 
-print_vertices :: fn(vertices: Slice![Vertex]) {
+print_vertices :: fn(vertices: Slice!<Vertex>) {
   printf("vertices = ["c);
   for i in 0..vertices.length {
     vert := vertices.data[i];
@@ -246,7 +247,7 @@ impl Cube {
     self.scale = scale;
   }
 
-  vertex_slice :: fn(self) -> Slice![Vertex] {
+  vertex_slice :: fn(self) -> Slice!<Vertex> {
     return self.vertices.as_slice(0..self.vertices.length);
   }
 
@@ -262,7 +263,7 @@ impl Cube {
   glEnable(GL::DEPTH_TEST);
   glClearColor(0.005, 0.005, 0.005, 1.0);
   
-  buffer := GeneralBuffer![Vertex]::new();
+  buffer := GeneralBuffer!<Vertex>::new();
   println(buffer.descriptor);
 
   shader: Shader;

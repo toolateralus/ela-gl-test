@@ -1,71 +1,36 @@
 #import format;
+#import memory;
 
 Vec2 :: struct {
   x: f32,
   y: f32,
 }
 
-// impl Format for Vec2 {
-//   format :: fn(self, builder: String_Builder*, options: Format_Options) {
-//     temp_allocator: Tracking_Allocator;
-
-//     defer temp_allocator.deinit();
-
-//     builder.appendf("Vec2 { x: %, y: % }", any.[
-//       any::new(self.x, temp_allocator),
-//       any::new(self.y, temp_allocator) 
-//     ], options);
-//   }
-// }
-
-// format_any :: fn(value: any, builder: String_Builder*, options: Format_Options) {
-//   type := value.type;
-//   if type.is_struct() {
-//     format_struct(value, builder, options);
-//   } else if type.is_enum() {
-//     format_enum(value, builder, options);
-//   } else if type.is_integral() {
-//     format_integer(value, builder, options);
-//   } else if type.is_float() {
-//     format_float(value, builder, options);
-//   } else if type.is_bool() {
-//     val := *(value.ptr as bool*);
-//     if val  {
-//       builder.append(true);
-//     } else {
-//       builder.append(false);
-//     }
-//   } else if type.is_tuple() {
-//     for idx in 0..type.tuple_length {
-
-//     }
-//   } else if type.is_pointer() {
-
-//   } else if type.is_string() {
-
-//   } else if type.is_array() {
-
-//   }
-// }
-
-// format_struct :: fn(value: any, builder: String_Builder*, options: Format_Options) {
-//   type := value.type;
-//   temp_allocator: Tracking_Allocator;
-//   builder.appendf("% {", .[any::new(type.name, temp_allocator)], options);
-  
-//   for field in type.fields {
-//     if options.indented {
-//       builder.append("  ");
-//     }
-//     builder.appendf("%: % = %", .[
-//       any::new(field.name, temp_allocator),
-//       any::new(field.type.name, temp_allocator),
-//     ], options);
-//   }
-//   builder.append("}");
-// }
+impl Format for Vec2 {
+  format :: fn(self, builder: String_Builder*, options: Format_Options) {
+    temp_allocator: Tracking_Allocator;
+    defer temp_allocator.deinit();
+    builder.appendf("Vec2 { x: %, y: % }", any.[
+      any::new(self.x, temp_allocator),
+      any::new(self.y, temp_allocator) 
+    ], options);
+  }
+}
 
 main :: fn() {
-  type := typeof((Vec2, Vec2));
-  println(type.size);
+  allocator: Tracking_Allocator;
+  list: s32*[];
+  for i in 0..10 {
+    list.push(allocator.allocate!<s32>());
+  }
+
+  for ptr in allocator.pointers {
+    println(*(ptr as s32*));
+  }
+
+  allocator.deinit();
+  
+  for ptr in allocator.pointers {
+    println(*(ptr as s32*));
+  }
 }
