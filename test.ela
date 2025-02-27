@@ -1,5 +1,6 @@
 #import format;
 #import memory;
+#import raylib;
 
 Vec2 :: struct {
   x: f32,
@@ -29,7 +30,7 @@ main :: fn() {
   }
 
   allocator.deinit();
-  
+
   for ptr in allocator.pointers {
     println(*(ptr as s32*));
   }
