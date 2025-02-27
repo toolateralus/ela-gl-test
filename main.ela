@@ -62,10 +62,10 @@ GeneralBuffer :: struct![T] {
 
 impl![T] GeneralBuffer![T] {
   new :: fn() -> #self {
-    buffer: #self;
+    buffer: #себя;
     glGenVertexArrays(1, &buffer.vao);
     glGenBuffers(1, &buffer.vbo);
-    type := #type(T);
+    type := typeof(T);
     index := 0;
     stride := sizeof(T);
 
@@ -73,8 +73,12 @@ impl![T] GeneralBuffer![T] {
     glBindBuffer(GL::ARRAY_BUFFER, buffer.vbo);
 
     descriptor: String_Builder;
+    options := Format_Options::default();
+    temp_alloc: Tracking_Allocator;
+    defer temp_alloc.deinit();
+
     // descriptor.append("buffer descriptor:\n");
-    // descriptor.append_then_free(format("  Info { vao:   %, vbo:    % }\n", .[any::new(&buffer.vao), any::new(&buffer.vbo)]));
+    // descriptor.appendf("  Info { vao:   %, vbo:    % }\n", .[any::new(&buffer.vao, temp_alloc), any::new(&buffer.vbo, temp_alloc)], options);
 
     defer { 
       descriptor.deinit();
@@ -85,26 +89,37 @@ impl![T] GeneralBuffer![T] {
     });
 
     for field in ordered_fields {
-      // descriptor.append_then_free(format("  % { index: %, offset: % }\n", .[any::new(&field.type.name), any::new(&index), any::new(&field.offset)]));
+      
+      // descriptor.appendf("  % { index: %, offset: % }\n", .[
+      //   any::new(&field.type.name, temp_alloc),
+      //   any::new(&index, temp_alloc),
+      //   any::new(&field.offset, temp_alloc)
+      // ], options);
+
       if field.type.is_float() {
         glVertexAttribPointer(index, field.size as s32, GL::FLOAT, false, stride, field.offset as void*);
       } else if field.type.is_integral() {
         glVertexAttribIPointer(index, field.size as s32, GL::INT, stride, field.offset as void*);
-      } else if field.type == #type(Mat4) {
+      } else if field.type == typeof(Mat4) {
         for i in 0..4 {
           offset := field.offset + i * sizeof(Vec4);
-          // descriptor.append_then_free(format("    f32 { index: %, offset: % }\n", .[any::new(&index), any::new(&offset)]));
+          
+          // descriptor.appendf("    f32 { index: %, offset: % }\n", .[
+          //   any::new(&index, temp_alloc), 
+          //   any::new(&offset, temp_alloc)
+          // ], options);
+
           glVertexAttribPointer(index, 4, GL::FLOAT, false, stride, offset as void*);
           glEnableVertexAttribArray(index);
           glVertexAttribDivisor(index, 1);
           index += 1;
         }
         continue;
-      } else if field.type == #type(Vec4) {
+      } else if field.type == typeof(Vec4) {
         glVertexAttribPointer(index, 4, GL::FLOAT, false, stride, field.offset as void*);
-      } else if field.type == #type(Vec3) {
+      } else if field.type == typeof(Vec3) {
         glVertexAttribPointer(index, 3, GL::FLOAT, false, stride, field.offset as void*);
-      } else if field.type == #type(Vec2) {
+      } else if field.type == typeof(Vec2) {
         glVertexAttribPointer(index, 2, GL::FLOAT, false, stride, field.offset as void*);
       } else {
         println("unsupported type in GeneralBuffer, T can only contain (floats|ints|Vec2|Vec3|Vec4|Mat4)");
@@ -237,12 +252,12 @@ impl Cube {
 
   matrix :: фн(себя) -> Mat4 {
     возврат Mat4::translation(себя.position) * 
-      Mat4::rotation(себя.rotation) * 
-      Mat4::scalar(себя.scale);
+            Mat4::rotation(себя.rotation) * 
+            Mat4::scalar(себя.scale);
   }
 }
 
-main :: fn () {
+маин :: фн () {
   window := Window::create(800, 600, "Привет, Мир!");
   glEnable(GL::DEPTH_TEST);
   glClearColor(0.005, 0.005, 0.005, 1.0);
@@ -263,6 +278,7 @@ main :: fn () {
   key_buffer: char[];
   {
     glfwSetWindowUserPointer(window.handle, &key_buffer);
+
     window.set_key_callback(fn(window: GLFWwindow*, key: s32, scancode: s32, action: s32, mod: s32) {
       data : char[]* = glfwGetWindowUserPointer(window);
       if action == GLFW::PRESS && key == GLFW::KEY_C && mod & GLFW::MOD_CONTROL {
@@ -316,6 +332,12 @@ main :: fn () {
     });
   }
 
+  model: Cube; 
+  {
+    model = Cube::new(0.1);
+    model.set_position(Vec3::new(0.0, 0.0, -5.0));
+  }
+
   camera: Camera;
   {
     fov := 45.0;
@@ -324,25 +346,27 @@ main :: fn () {
     far := 100.0;
     camera = Camera::new(Vec3::up(), fov, aspect_ratio, near, far);
     camera.position = Vec3::new(0.0, 0.0, 3.0);
+    camera.target = model.position;
   }
 
-  model: Cube; 
+  // Lighting uniforms.
   {
-    model = Cube::default();
-    model.set_position(Vec3::new(0.0, 0.0, -5.0));
-    model.set_rotation(Vec3::zero());
-    model.set_scale(Vec3::one());
+    lightColor := Vec3::new(0.0, 1.0, 1.0);
+    objectColor := Vec3::new(1.0, 0.25, 0.31);
+    lightPos :=  Vec3::new(0.0, 1.0, 1.0);
+    shader.set_vec3("lightPos", &lightPos);
+    shader.set_vec3("lightColor", &lightColor);
+    shader.set_vec3("objectColor", &objectColor);
+    shader.set_float("specularStrength", 1.5);
+    shader.set_float("ambientStrength", 1.0);
   }
-
-  lightColor := Vec3::new(0.0, 1.0, 1.0);
-  objectColor := Vec3::new(1.0, 0.25, 0.31);
 
   model_pos := Vec3::new(0.0, 0.0, -5.0);
 
-  while !window.should_close() {
+  buffer.bind_and_buffer_data(model.vertex_slice());
 
-
-    while key_buffer.length > 0 {
+  пока !window.should_close() {
+    пока key_buffer.length > 0 {
       move_vector := матч key_buffer.pop() {
         'w' => Vec3::new(0.0, 0.0, -1.0),
         'a' => Vec3::new(1.0, 0.0, 0.0),
@@ -350,32 +374,19 @@ main :: fn () {
         'd' => Vec3::new(-1.0, 0.0, 0.0),
         else => Vec3::zero()
       };
-      printf("move: x=%.1f, y=%.1f, z=%.1f\n"c, move_vector.x, move_vector.y, move_vector.z);
-      camera.position = camera.position + move_vector;
+      model.position = model.position + move_vector;
+      printf("moving := %.1f, %.1f, %.1f\n"c, model.position.x, model.position.y, model.position.z);
     }
-
-    // Lighting uniforms.
-    buffer.bind_and_buffer_data(model.vertex_slice());
-    {
-      lightPos :=  Vec3::new(0.0, 1.0, 1.0);
-      shader.set_vec3("lightPos", &lightPos);
-      shader.set_vec3("lightColor", &lightColor);
-      shader.set_vec3("objectColor", &objectColor);
-      shader.set_float("specularStrength", 1.5);
-      shader.set_float("ambientStrength", 1.0);
-    }
-  
+    
     // Camera stuff.
     matrix := model.matrix();
-    {
-      camera.target = model.position;
-      camera.update();
-      viewPos := camera.view.get_translation();
-      shader.set_vec3("viewPos", &viewPos);
-      shader.set_mat4("model", &matrix);
-      shader.set_mat4("view", &camera.view);
-      shader.set_mat4("projection", &camera.projection);
-    }
+    camera.target = model.position;
+    camera.update();
+    viewPos := camera.view.get_translation();
+    shader.set_vec3("viewPos", &viewPos);
+    shader.set_mat4("model", &matrix);
+    shader.set_mat4("view", &camera.view);
+    shader.set_mat4("projection", &camera.projection);
 
     glClear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
     glDrawArrays(GL::TRIANGLES, 0, NUM_VERTICES);
