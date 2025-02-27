@@ -1,37 +1,9 @@
+#import arena;
 #import format;
-#import memory;
-#import raylib;
-
-Vec2 :: struct {
-  x: f32,
-  y: f32,
-}
-
-impl Format for Vec2 {
-  format :: fn(self, builder: String_Builder*, options: Format_Options) {
-    temp_allocator: Tracking_Allocator;
-    defer temp_allocator.deinit();
-    builder.appendf("Vec2 { x: %, y: % }", any.[
-      any::new(self.x, temp_allocator),
-      any::new(self.y, temp_allocator) 
-    ], options);
-  }
-}
 
 main :: fn() {
-  allocator: Tracking_Allocator;
-  list: s32*[];
-  for i in 0..10 {
-    list.push(allocator.allocate!<s32>());
-  }
+  arena := Arena::new(1024, ArenaFlags::AlignAllocations);
 
-  for ptr in allocator.pointers {
-    println(*(ptr as s32*));
-  }
+  
 
-  allocator.deinit();
-
-  for ptr in allocator.pointers {
-    println(*(ptr as s32*));
-  }
 }

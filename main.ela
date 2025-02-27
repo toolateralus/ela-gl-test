@@ -78,8 +78,8 @@ impl!<T> GeneralBuffer!<T> {
     temp_alloc: Tracking_Allocator;
     defer temp_alloc.deinit();
 
-    // descriptor.append("buffer descriptor:\n");
-    // descriptor.appendf("  Info { vao:   %, vbo:    % }\n", .[any::new(&buffer.vao, temp_alloc), any::new(&buffer.vbo, temp_alloc)], options);
+    descriptor.append("buffer descriptor:\n");
+    descriptor.appendf("  Info { vao:   %, vbo:    % }\n", .[any::new(&buffer.vao, temp_alloc), any::new(&buffer.vbo, temp_alloc)], options);
 
     defer { 
       descriptor.deinit();
@@ -91,11 +91,11 @@ impl!<T> GeneralBuffer!<T> {
 
     for field in ordered_fields {
       
-      // descriptor.appendf("  % { index: %, offset: % }\n", .[
-      //   any::new(&field.type.name, temp_alloc),
-      //   any::new(&index, temp_alloc),
-      //   any::new(&field.offset, temp_alloc)
-      // ], options);
+      descriptor.appendf("  % { index: %, offset: % }\n", .[
+        any::new(&field.type.name, temp_alloc),
+        any::new(&index, temp_alloc),
+        any::new(&field.offset, temp_alloc)
+      ], options);
 
       if field.type.is_float() {
         glVertexAttribPointer(index, field.size as s32, GL::FLOAT, false, stride, field.offset as void*);
@@ -105,10 +105,10 @@ impl!<T> GeneralBuffer!<T> {
         for i in 0..4 {
           offset := field.offset + i * sizeof(Vec4);
           
-          // descriptor.appendf("    f32 { index: %, offset: % }\n", .[
-          //   any::new(&index, temp_alloc), 
-          //   any::new(&offset, temp_alloc)
-          // ], options);
+          descriptor.appendf("    f32 { index: %, offset: % }\n", .[
+            any::new(&index, temp_alloc), 
+            any::new(&offset, temp_alloc)
+          ], options);
 
           glVertexAttribPointer(index, 4, GL::FLOAT, false, stride, offset as void*);
           glEnableVertexAttribArray(index);
