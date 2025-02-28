@@ -79,7 +79,13 @@ impl!<T> GeneralBuffer!<T> {
     defer temp_alloc.deinit();
 
     descriptor.append("buffer descriptor:\n");
-    descriptor.appendf("  Info { vao:   %, vbo:    % }\n", .[any::new(&buffer.vao, temp_alloc), any::new(&buffer.vbo, temp_alloc)], options);
+    descriptor.appendf("  Info { vao:   %, vbo:    % }\n", 
+      .[
+        any::from(&buffer.vao), 
+        any::from(&buffer.vbo)
+      ], 
+      options
+    );
 
     defer { 
       descriptor.deinit();
@@ -92,9 +98,9 @@ impl!<T> GeneralBuffer!<T> {
     for field in ordered_fields {
       
       descriptor.appendf("  % { index: %, offset: % }\n", .[
-        any::new(&field.type.name, temp_alloc),
-        any::new(&index, temp_alloc),
-        any::new(&field.offset, temp_alloc)
+        any::from(&field.type.name),
+        any::from(&index),
+        any::from(&field.offset)
       ], options);
 
       if field.type.is_float() {
@@ -106,8 +112,8 @@ impl!<T> GeneralBuffer!<T> {
           offset := field.offset + i * sizeof(Vec4);
           
           descriptor.appendf("    f32 { index: %, offset: % }\n", .[
-            any::new(&index, temp_alloc), 
-            any::new(&offset, temp_alloc)
+            any::from(&index), 
+            any::from(&offset)
           ], options);
 
           glVertexAttribPointer(index, 4, GL::FLOAT, false, stride, offset as void*);

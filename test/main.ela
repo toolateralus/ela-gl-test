@@ -1,0 +1,56 @@
+#import rayui;
+#import format;
+
+#c_flags " -fsanitize=address,undefined,leak "
+
+main :: fn() {
+  InitWindow(800, 600, "Привет, Мир!"c);
+
+  randomize_position := fn(rectangle: Rectangle*) {
+    println("clicked");
+
+    position := Vector2::clamp(Vector2::random(100), Vector2::zero(), .{
+      x: 400,
+      y: 400
+    });
+
+    printlnf("x: %, y: %", .[
+      any::from(&position.x),
+      any::from(&position.y),
+    ]);
+
+    rectangle.x = position.x;
+    rectangle.y = position.y;
+  };
+
+  button_style := Style.{
+    foreground: WHITE,
+    background: GREEN,
+    highlighted: YELLOW,
+    font_size: 16,
+  };
+
+  button_rect := Rectangle.{
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 50,
+  };
+
+  button_label := String::from("Click me");
+  defer button_label.deinit();
+
+  while !WindowShouldClose() {
+    BeginDrawing();
+    ClearBackground(BLACK);
+
+    button_pro!<Rectangle>(button_label, 
+      button_rect,
+      button_style,
+      randomize_position,
+      &button_rect
+    );
+
+    EndDrawing();
+  }
+}

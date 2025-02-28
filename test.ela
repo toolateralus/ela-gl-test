@@ -1,9 +1,0 @@
-#import arena;
-#import format;
-
-main :: fn() {
-  arena := Arena::new(1024, ArenaFlags::AlignAllocations);
-
-  
-
-}
