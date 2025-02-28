@@ -79,7 +79,7 @@ impl!<T> GeneralBuffer!<T> {
     defer temp_alloc.deinit();
 
     descriptor.append("buffer descriptor:\n");
-    descriptor.appendf("  Info { vao:   %, vbo:    % }\n", 
+    descriptor.appendf("Buffer { vao:   %, vbo:    % }\n", 
       .[
         any::from(&buffer.vao), 
         any::from(&buffer.vbo)
