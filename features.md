@@ -1,7 +1,7 @@
 
 #### Tagged Unions & Pattern Matching.
 
-#### Drop interface and "destructors"
+#### Drop trait and "destructors"
 
 #### Fix any type and add ability to do implicit casting routine stuff.
 
@@ -12,16 +12,16 @@
 such as
 ```rust
 // compile time compatible struct.
-Struct :: struct @const {
+struct Struct @const {
   x: f32,
   y: f32
 }
 
-snprintf :: fn() @foreign;
-c_printf :: fn() @foreign(printf);
+fn snprintf() @foreign;
+fn c_printf() @foreign(printf);
 
 // we won't be constrained to 'main' as an entry point.
-my_fruity_ahh_entry_point :: fn() @entry {
+fn my_fruity_ahh_entry_point() @entry {
   ur_cappin: bool = false;
   printlnf("no cap bruh? = %", .[any::from(&ur_cappin)]);
 }
@@ -32,10 +32,10 @@ This would allow us to stack up attributes too, and not be constrained to beginn
 like 
 
 ```rust
-  fmod :: fn() @foreign(fmod) @const;
+  fn fmod() @foreign(fmod) @const;
 
   // we can also do auto impl's for common interfaces like Debug or Clone or whatever.
-  Result :: union![_Ok, _Err] @impl[Clone, Debug] {
+  union Result![_Ok, _Err] @impl[Clone, Debug] {
 
   }
 
@@ -45,8 +45,8 @@ like
 ```
 
 
-#### Interfaces should have default or 'overrideable' functions, where the interface itself can define a method
-  and the consumer of the interface can choose to provide a new one, or use the default.
+#### Interfaces should have default or 'overrideable' functions, where the trait itself can define a method
+  and the consumer of the trait can choose to provide a new one, or use the default.
 
 
 #### Modules.
@@ -56,7 +56,7 @@ like
   // or, import a module, an expose it via the :: operator, qualified.
   module main;
   import std::format;
-  main :: fn() @entry {
+  fn main() @entry {
     format::println("hello world");
   }
 
@@ -64,14 +64,14 @@ like
   // or, import targeted symbols.
   module main;
   import { println } in std::format;
-  main :: fn() @entry {
+  fn main() @entry {
     println("hello world");
   }
 
   // or, unload all symbols from the module into here.
   module main;
   import * in std::format;
-  main :: fn() @entry {
+  fn main() @entry {
     println("hello world");
   }
 
@@ -79,7 +79,7 @@ like
   // this wouldn't work, because we didn't actually implement std::format, we just added the std module which contains very little itself.
   module main;
   import std;
-  main :: fn() @entry {
+  fn main() @entry {
     std::format::println("hello world");
   }
 
@@ -88,7 +88,7 @@ like
 
 #### change ![] to !<>. much kinder to read.
 ```rust
-default :: fn!<T>() -> T {
+fn default!<T>() -> T {
   return .{}
 }
 ```
@@ -109,8 +109,8 @@ default :: fn!<T>() -> T {
 
 #### add variadic generics and value generics.
 ```rust
-  format :: fn!<T...>(fmt: str, pack: ...T) -> String {
-    builder: std::String_Builder;
+  fn format!<T...>(fmt: str, pack: ...T) -> String {
+    builder: std::StringBuilder;
     builder.set_allocator(std::mem::temp_allocator.{});
     defer builder.deinit();
     #for (t, v) in pack {
@@ -121,14 +121,14 @@ default :: fn!<T>() -> T {
 ```
 
 ```rust
-Fixed_Array :: struct!<T, N: u32> {
+struct Fixed_Array!<T, N: u32> {
   data: T[N],
   length: N
 }
 ```
 
 ```rust
-index :: fn!<T, SIZE: u32, N: u32>(array: T[SIZE]) -> T {
+fn index!<T, SIZE: u32, N: u32>(array: T[SIZE]) -> T {
   return array[N];
 }
 ```
@@ -143,7 +143,7 @@ import { println } in std::format;
 alias!<_Ok, _Err> Ok  :: Result!<_Ok, _Err>::Ok;
 alias!<_Ok, _Err> Err :: Result!<_Ok, _Err>::Err;
 
-main :: fn() @entry {
+fn main() @entry {
   x : Result!<s32, None> = Ok(100);
 }
 ```

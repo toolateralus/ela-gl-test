@@ -1,9 +1,9 @@
-#import rayui;
-#import format;
+import rayui::*;
+import fmt::*;
 
 #c_flags " -fsanitize=address,undefined,leak "
 
-main :: fn() {
+fn main() {
   InitWindow(800, 600, "Привет, Мир!"c);
 
   randomize_position := fn(rectangle: Rectangle*) {
